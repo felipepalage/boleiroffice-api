@@ -30,6 +30,7 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=Boleiroffice;Username=boleiroffice;Password=${DB_PASSWORD}"
       Jwt__SecretKey: "${JWT_SECRET_KEY}"
       Cors__AllowedOrigins__0: "${FRONTEND_URL}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY}"
       Database__ApplyMigrationsOnStartup: "true"
       Database__SeedDataOnStartup: "false"
     depends_on:
