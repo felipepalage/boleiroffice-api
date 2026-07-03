@@ -1,0 +1,6 @@
+@Boleiroffice.Api_HostAddress = http://localhost:5005
+
+GET {{Boleiroffice.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,13 @@
+**/.git
+**/.vs
+**/bin
+**/obj
+**/.env
+**/node_modules
+**/dist
+**/*.user
+**/local.settings.json
+boot-ball-hub/
+nginx/
+.tmp-hash/
+Boleiroffice.Tests/

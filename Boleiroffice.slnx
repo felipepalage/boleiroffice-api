@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="Boleiroffice.Api/Boleiroffice.Api.csproj" />
+  <Project Path="Boleiroffice.Application/Boleiroffice.Application.csproj" />
+  <Project Path="Boleiroffice.Domain/Boleiroffice.Domain.csproj" />
+  <Project Path="Boleiroffice.Infrastructure/Boleiroffice.Infrastructure.csproj" />
+  <Project Path="Boleiroffice.Tests/Boleiroffice.Tests.csproj" />
+</Solution>

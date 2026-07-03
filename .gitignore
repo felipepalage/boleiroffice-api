@@ -1,0 +1,47 @@
+# .NET build artifacts
+bin/
+obj/
+*.user
+.vs/
+*.suo
+*.cache
+
+# NuGet local cache / dotnet SDK local
+.dotnet/
+.nuget/
+*.nupkg
+
+# Environment / secrets
+appsettings.Development.json
+appsettings.Production.json
+
+# Node / Frontend
+node_modules/
+dist/
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.claude/
+*.swp
+
+# Build logs
+*.log
+
+# Published output
+publish-api/
+frontend/
+
+# EF scripts
+scripts/
+
+# Docker build context
+infra-build.log
+api-build.log
+.git.bak/
