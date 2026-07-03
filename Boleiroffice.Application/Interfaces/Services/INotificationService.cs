@@ -11,4 +11,7 @@ public interface INotificationService
 {
     Task SendToEmpresaAsync(Guid empresaId, AppNotification notification, CancellationToken cancellationToken = default);
     Task BroadcastAsync(AppNotification notification, CancellationToken cancellationToken = default);
+
+    // Evento em tempo real para a empresa, SEM persistir notificação (ex.: placar ao vivo).
+    Task SendEventToEmpresaAsync(Guid empresaId, string evento, object payload, CancellationToken cancellationToken = default);
 }

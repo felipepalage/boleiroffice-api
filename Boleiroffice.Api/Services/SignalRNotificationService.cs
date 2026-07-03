@@ -29,6 +29,9 @@ public sealed class SignalRNotificationService : INotificationService
     public Task BroadcastAsync(AppNotification notification, CancellationToken cancellationToken = default)
         => _hub.Clients.All.SendAsync("ReceiveNotification", notification, cancellationToken);
 
+    public Task SendEventToEmpresaAsync(Guid empresaId, string evento, object payload, CancellationToken cancellationToken = default)
+        => _hub.Clients.Group($"empresa-{empresaId}").SendAsync(evento, payload, cancellationToken);
+
     private async Task PersistAsync(Guid empresaId, AppNotification notification, CancellationToken cancellationToken)
     {
         try

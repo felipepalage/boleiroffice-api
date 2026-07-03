@@ -10,8 +10,22 @@ namespace Boleiroffice.Application.Services;
 public sealed class AmistosoService : IAmistosoService
 {
     private readonly IAmistosoRepository _repository;
+    private readonly INotificationService _notifier;
 
-    public AmistosoService(IAmistosoRepository repository) => _repository = repository;
+    public AmistosoService(IAmistosoRepository repository, INotificationService notifier)
+    {
+        _repository = repository;
+        _notifier = notifier;
+    }
+
+    private Task NotificarPartidaAsync(Guid empresaId, PartidaAmistoso partida, CancellationToken cancellationToken)
+        => _notifier.SendEventToEmpresaAsync(empresaId, "AmistosoAtualizado", new
+        {
+            partidaId = partida.Id,
+            time1Gols = partida.Time1Gols,
+            time2Gols = partida.Time2Gols,
+            finalizada = partida.Finalizada
+        }, cancellationToken);
 
     // ---------- Elenco ----------
 
@@ -161,6 +175,7 @@ public sealed class AmistosoService : IAmistosoService
         // INSERT explícito do gol (Added). O incremento do placar na partida rastreada
         // é salvo no mesmo SaveChanges.
         await _repository.AddGolAsync(gol, cancellationToken);
+        await NotificarPartidaAsync(empresaId, partida, cancellationToken);
         return MapPartida(partida);
     }
 
@@ -176,6 +191,7 @@ public sealed class AmistosoService : IAmistosoService
         partida.DuracaoSegundos = request.DuracaoSegundos < 0 ? 0 : request.DuracaoSegundos;
 
         await _repository.UpdatePartidaAsync(partida, cancellationToken);
+        await NotificarPartidaAsync(empresaId, partida, cancellationToken);
         return MapPartida(partida);
     }
 
