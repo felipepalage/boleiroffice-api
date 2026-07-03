@@ -82,7 +82,10 @@ public sealed class AmistosoRepository : IAmistosoRepository
 
     public async Task UpdatePartidaAsync(PartidaAmistoso partida, CancellationToken cancellationToken)
     {
-        _context.PartidasAmistoso.Update(partida);
+        // A partida chega rastreada (GetPartidaByIdAsync). NÃO chamar Update() aqui:
+        // ele marcaria gols recém-adicionados (PK Guid do cliente) como Modified,
+        // gerando UPDATE de linha inexistente -> DbUpdateConcurrencyException (500).
+        // O change tracking já detecta o gol novo (INSERT) e as mudanças da partida (UPDATE).
         await _context.SaveChangesAsync(cancellationToken);
     }
 
