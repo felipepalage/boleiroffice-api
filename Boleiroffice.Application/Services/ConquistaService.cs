@@ -28,13 +28,39 @@ public sealed class ConquistaService : IConquistaService
 
         var conquistas = new List<ConquistaResponse>
         {
+            ComputeEstreante(timeId, finalizados),
             ComputeVeterano(timeId, finalizados),
             ComputeCentenario(timeId, finalizados),
             ComputeInvicto(timeId, finalizados),
             ComputeDominante(timeId, finalizados),
+            ComputeGoleada(timeId, finalizados),
         };
 
         return new ConquistasTimeResponse(timeId, conquistas);
+    }
+
+    private static ConquistaResponse ComputeEstreante(Guid timeId, List<Desafio> finalizados)
+    {
+        var conquistado = finalizados.Count >= 1;
+        return new ConquistaResponse(
+            "ESTREANTE", "Estreante", "Dispute sua primeira partida", "🎬",
+            conquistado, conquistado ? finalizados.FirstOrDefault()?.DataJogo.ToDateTime(TimeOnly.MinValue) : null);
+    }
+
+    private static ConquistaResponse ComputeGoleada(Guid timeId, List<Desafio> finalizados)
+    {
+        var goleada = finalizados.FirstOrDefault(d =>
+        {
+            bool souCriador = d.TimeCriadorId == timeId;
+            var meu = souCriador ? d.PlacarCriador : d.PlacarDesafiante;
+            var dele = souCriador ? d.PlacarDesafiante : d.PlacarCriador;
+            return (meu - dele) >= 4;
+        });
+
+        var conquistado = goleada is not null;
+        return new ConquistaResponse(
+            "GOLEADA", "Goleada", "Vença uma partida por 4 gols ou mais de diferença", "💥",
+            conquistado, conquistado ? goleada!.DataJogo.ToDateTime(TimeOnly.MinValue) : null);
     }
 
     private static ConquistaResponse ComputeVeterano(Guid timeId, List<Desafio> finalizados)
