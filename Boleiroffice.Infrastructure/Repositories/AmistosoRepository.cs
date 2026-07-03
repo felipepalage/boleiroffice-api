@@ -80,12 +80,20 @@ public sealed class AmistosoRepository : IAmistosoRepository
             .Include(x => x.Gols)
             .FirstOrDefaultAsync(x => x.Id == id && x.EmpresaId == empresaId, cancellationToken);
 
+    public async Task AddGolAsync(GolAmistoso gol, CancellationToken cancellationToken)
+    {
+        // INSERT explícito. Como a PK Guid é gerada no cliente, adicionar o gol só pela
+        // coleção rastreada faria o EF marcá-lo como Modified (UPDATE de linha inexistente
+        // -> DbUpdateConcurrencyException 500). AddAsync força o estado Added.
+        // O score da partida (rastreada) é persistido no mesmo SaveChanges.
+        await _context.GolsAmistoso.AddAsync(gol, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpdatePartidaAsync(PartidaAmistoso partida, CancellationToken cancellationToken)
     {
-        // A partida chega rastreada (GetPartidaByIdAsync). NÃO chamar Update() aqui:
-        // ele marcaria gols recém-adicionados (PK Guid do cliente) como Modified,
-        // gerando UPDATE de linha inexistente -> DbUpdateConcurrencyException (500).
-        // O change tracking já detecta o gol novo (INSERT) e as mudanças da partida (UPDATE).
+        // A partida chega rastreada (GetPartidaByIdAsync); alterações escalares (ex.: finalizar)
+        // são detectadas pelo change tracking. Não usar DbSet.Update em grafo rastreado.
         await _context.SaveChangesAsync(cancellationToken);
     }
 

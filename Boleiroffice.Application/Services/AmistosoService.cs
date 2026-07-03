@@ -158,7 +158,9 @@ public sealed class AmistosoService : IAmistosoService
         if (request.TimeNumero == 1) partida.Time1Gols++;
         else partida.Time2Gols++;
 
-        await _repository.UpdatePartidaAsync(partida, cancellationToken);
+        // INSERT explícito do gol (Added). O incremento do placar na partida rastreada
+        // é salvo no mesmo SaveChanges.
+        await _repository.AddGolAsync(gol, cancellationToken);
         return MapPartida(partida);
     }
 
