@@ -21,6 +21,7 @@ public interface IAmistosoRepository
     Task AddPartidaAsync(PartidaAmistoso partida, CancellationToken cancellationToken);
     Task<PartidaAmistoso?> GetPartidaByIdAsync(Guid id, Guid empresaId, CancellationToken cancellationToken);
     Task AddGolAsync(GolAmistoso gol, CancellationToken cancellationToken);
+    Task RemoveGolAsync(GolAmistoso gol, CancellationToken cancellationToken);
     Task UpdatePartidaAsync(PartidaAmistoso partida, CancellationToken cancellationToken);
     Task<PagedResult<PartidaAmistoso>> GetPartidasPagedAsync(Guid empresaId, PaginationParameters pagination, CancellationToken cancellationToken);
 

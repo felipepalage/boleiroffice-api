@@ -179,6 +179,25 @@ public sealed class AmistosoService : IAmistosoService
         return MapPartida(partida);
     }
 
+    public async Task<PartidaAmistosoResponse> AnularGolAsync(Guid empresaId, Guid partidaId, Guid golId, CancellationToken cancellationToken)
+    {
+        var partida = await _repository.GetPartidaByIdAsync(partidaId, empresaId, cancellationToken)
+            ?? throw new NotFoundException("Partida não encontrada.");
+        if (partida.Finalizada)
+            throw new BusinessException("Partida já finalizada.");
+
+        var gol = partida.Gols.FirstOrDefault(g => g.Id == golId)
+            ?? throw new NotFoundException("Gol não encontrado.");
+
+        if (gol.TimeNumero == 1) partida.Time1Gols = Math.Max(0, partida.Time1Gols - 1);
+        else partida.Time2Gols = Math.Max(0, partida.Time2Gols - 1);
+        partida.Gols.Remove(gol);
+
+        await _repository.RemoveGolAsync(gol, cancellationToken);
+        await NotificarPartidaAsync(empresaId, partida, cancellationToken);
+        return MapPartida(partida);
+    }
+
     public async Task<PartidaAmistosoResponse> FinalizarPartidaAsync(Guid empresaId, Guid partidaId, FinalizarPartidaRequest request, CancellationToken cancellationToken)
     {
         var partida = await _repository.GetPartidaByIdAsync(partidaId, empresaId, cancellationToken)

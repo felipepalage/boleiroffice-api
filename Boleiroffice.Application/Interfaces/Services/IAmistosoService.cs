@@ -19,6 +19,7 @@ public interface IAmistosoService
     // Partidas (Rachão)
     Task<PartidaAmistosoResponse> IniciarPartidaAsync(Guid empresaId, IniciarPartidaRequest request, CancellationToken cancellationToken);
     Task<PartidaAmistosoResponse> RegistrarGolAsync(Guid empresaId, Guid partidaId, RegistrarGolRequest request, CancellationToken cancellationToken);
+    Task<PartidaAmistosoResponse> AnularGolAsync(Guid empresaId, Guid partidaId, Guid golId, CancellationToken cancellationToken);
     Task<PartidaAmistosoResponse> FinalizarPartidaAsync(Guid empresaId, Guid partidaId, FinalizarPartidaRequest request, CancellationToken cancellationToken);
     Task<PartidaAmistosoResponse> GetPartidaAsync(Guid empresaId, Guid partidaId, CancellationToken cancellationToken);
     Task<PagedResult<PartidaAmistosoResponse>> GetPartidasAsync(Guid empresaId, PaginationParameters pagination, CancellationToken cancellationToken);

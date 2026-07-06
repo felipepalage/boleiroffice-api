@@ -90,6 +90,13 @@ public sealed class AmistosoRepository : IAmistosoRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RemoveGolAsync(GolAmistoso gol, CancellationToken cancellationToken)
+    {
+        _context.GolsAmistoso.Remove(gol);
+        // O placar da partida (rastreada) é persistido no mesmo SaveChanges.
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpdatePartidaAsync(PartidaAmistoso partida, CancellationToken cancellationToken)
     {
         // A partida chega rastreada (GetPartidaByIdAsync); alterações escalares (ex.: finalizar)

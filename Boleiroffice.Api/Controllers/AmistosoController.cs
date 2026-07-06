@@ -64,6 +64,10 @@ public sealed class AmistosoController : ControllerBase
     public async Task<ActionResult<PartidaAmistosoResponse>> RegistrarGol(Guid id, [FromBody] RegistrarGolRequest request, CancellationToken cancellationToken)
         => Ok(await _service.RegistrarGolAsync(User.GetCurrentUser().EmpresaId, id, request, cancellationToken));
 
+    [HttpDelete("partidas/{id:guid}/gols/{golId:guid}")]
+    public async Task<ActionResult<PartidaAmistosoResponse>> AnularGol(Guid id, Guid golId, CancellationToken cancellationToken)
+        => Ok(await _service.AnularGolAsync(User.GetCurrentUser().EmpresaId, id, golId, cancellationToken));
+
     [HttpPost("partidas/{id:guid}/finalizar")]
     public async Task<ActionResult<PartidaAmistosoResponse>> FinalizarPartida(Guid id, [FromBody] FinalizarPartidaRequest request, CancellationToken cancellationToken)
         => Ok(await _service.FinalizarPartidaAsync(User.GetCurrentUser().EmpresaId, id, request, cancellationToken));
