@@ -35,6 +35,8 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<TimeAmistosoJogador> TimesAmistosoJogadores => Set<TimeAmistosoJogador>();
     public DbSet<PartidaAmistoso> PartidasAmistoso => Set<PartidaAmistoso>();
     public DbSet<GolAmistoso> GolsAmistoso => Set<GolAmistoso>();
+    public DbSet<RachaoEvento> RachaoEventos => Set<RachaoEvento>();
+    public DbSet<RachaoConfirmacao> RachaoConfirmacoes => Set<RachaoConfirmacao>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -387,6 +389,29 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.EmpresaId).HasDatabaseName("IX_GolAmistoso_EmpresaId");
             entity.HasIndex(x => x.PartidaAmistosoId).HasDatabaseName("IX_GolAmistoso_PartidaId");
             entity.HasOne(x => x.Partida).WithMany(x => x.Gols).HasForeignKey(x => x.PartidaAmistosoId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RachaoEvento>(entity =>
+        {
+            entity.ToTable("rachao_eventos");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Token).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.HorarioEvento).IsRequired();
+            entity.Property(x => x.NumeroTimes).IsRequired();
+            entity.Property(x => x.DataCriacao).IsRequired();
+            entity.HasIndex(x => x.Token).IsUnique().HasDatabaseName("IX_RachaoEvento_Token");
+            entity.HasIndex(x => x.EmpresaId).HasDatabaseName("IX_RachaoEvento_EmpresaId");
+            entity.HasOne(x => x.Empresa).WithMany().HasForeignKey(x => x.EmpresaId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<RachaoConfirmacao>(entity =>
+        {
+            entity.ToTable("rachao_confirmacoes");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Nome).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.DataCriacao).IsRequired();
+            entity.HasIndex(x => x.RachaoEventoId).HasDatabaseName("IX_RachaoConfirmacao_EventoId");
+            entity.HasOne(x => x.Evento).WithMany(x => x.Confirmacoes).HasForeignKey(x => x.RachaoEventoId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
