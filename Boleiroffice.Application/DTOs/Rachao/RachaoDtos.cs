@@ -2,11 +2,11 @@ namespace Boleiroffice.Application.DTOs.Rachao;
 
 public sealed record CriarRachaoRequest(DateTime HorarioEvento, int NumeroTimes);
 
-public sealed record ConfirmarPresencaRequest(string Nome);
+public sealed record ConfirmarPresencaRequest(string Nome, string Empresa);
 
-public sealed record RachaoConfirmacaoResponse(Guid Id, string Nome);
+public sealed record RachaoConfirmacaoResponse(Guid Id, string Nome, string? Empresa);
 
-// Visão do dono (autenticado) — gerencia o evento
+// Visao do dono (autenticado) - gerencia o evento
 public sealed record RachaoEventoResponse(
     Guid Id,
     string Token,
@@ -17,12 +17,12 @@ public sealed record RachaoEventoResponse(
 
 public sealed record TimeSorteadoResponse(string Nome, IReadOnlyList<string> Jogadores);
 
-// Visão pública (link) — sem login
+// Visao publica (link) - sem login
 public sealed record RachaoPublicoResponse(
     string Token,
     string EmpresaNome,
     DateTime HorarioEvento,
     int NumeroTimes,
     bool SorteioFeito,
-    IReadOnlyList<string> Confirmados,
+    IReadOnlyList<RachaoConfirmacaoResponse> Confirmados,
     IReadOnlyList<TimeSorteadoResponse> Times);

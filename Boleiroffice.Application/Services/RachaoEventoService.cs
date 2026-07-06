@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Boleiroffice.Application.DTOs.Rachao;
 using Boleiroffice.Application.Exceptions;
 using Boleiroffice.Application.Interfaces.Repositories;
@@ -56,25 +58,31 @@ public sealed class RachaoEventoService : IRachaoEventoService
         var evento = await _repo.GetByTokenAsync(token, cancellationToken);
         if (evento is null) return null;
         if (evento.SorteioFeito)
-            throw new BusinessException("As confirmações já foram encerradas (times sorteados).");
+            throw new BusinessException("As confirmacoes ja foram encerradas (times sorteados).");
 
         var nome = (request.Nome ?? string.Empty).Trim();
+        var empresa = (request.Empresa ?? string.Empty).Trim();
         if (nome.Length < 2)
             throw new BusinessException("Informe seu nome para confirmar.");
+        if (empresa.Length < 2)
+            throw new BusinessException("Informe a empresa em que voce joga.");
 
-        var jaConfirmado = evento.Confirmacoes.Any(c => c.Nome.Equals(nome, StringComparison.OrdinalIgnoreCase));
-        if (!jaConfirmado)
+        var chaveUnica = CriarChaveUnica(nome, empresa);
+        var jaConfirmado = evento.Confirmacoes.Any(c => CriarChaveUnica(c.Nome, c.Empresa ?? string.Empty) == chaveUnica);
+        if (jaConfirmado)
+            throw new BusinessException("Voce ja confirmou presenca nesse rachao.");
+
+        var confirmacao = new RachaoConfirmacao
         {
-            var confirmacao = new RachaoConfirmacao
-            {
-                Id = Guid.NewGuid(),
-                RachaoEventoId = evento.Id,
-                Nome = nome,
-                DataCriacao = DateTime.UtcNow
-            };
-            evento.Confirmacoes.Add(confirmacao);
-            await _repo.AddConfirmacaoAsync(confirmacao, cancellationToken);
-        }
+            Id = Guid.NewGuid(),
+            RachaoEventoId = evento.Id,
+            Nome = nome,
+            Empresa = empresa,
+            ChaveUnica = chaveUnica,
+            DataCriacao = DateTime.UtcNow
+        };
+        evento.Confirmacoes.Add(confirmacao);
+        await _repo.AddConfirmacaoAsync(confirmacao, cancellationToken);
 
         return await MapPublicoAsync(evento, cancellationToken);
     }
@@ -86,10 +94,13 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
         foreach (var evento in pendentes)
         {
-            var nomes = evento.Confirmacoes.Select(c => c.Nome).OrderBy(_ => Guid.NewGuid()).ToList();
+            var confirmados = evento.Confirmacoes
+                .Select(NomeComEmpresa)
+                .OrderBy(_ => Guid.NewGuid())
+                .ToList();
             var numeroTimes = Math.Max(2, evento.NumeroTimes);
 
-            if (nomes.Count >= 1)
+            if (confirmados.Count >= 1)
             {
                 var dataSorteio = DateTime.UtcNow;
                 var times = new List<TimeAmistoso>();
@@ -106,14 +117,14 @@ public sealed class RachaoEventoService : IRachaoEventoService
                     });
                 }
 
-                for (var i = 0; i < nomes.Count; i++)
+                for (var i = 0; i < confirmados.Count; i++)
                 {
                     var time = times[i % numeroTimes];
                     time.Jogadores.Add(new TimeAmistosoJogador
                     {
                         Id = Guid.NewGuid(),
                         TimeAmistosoId = time.Id,
-                        Nome = nomes[i]
+                        Nome = confirmados[i]
                     });
                 }
 
@@ -126,8 +137,8 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
             await _notifier.SendToEmpresaAsync(evento.EmpresaId, new AppNotification(
                 "rachao",
-                "Times sorteados! ⚽",
-                $"{nomes.Count} confirmado(s) — os times do rachão foram sorteados. Veja na aba Times.",
+                "Times sorteados!",
+                $"{confirmados.Count} confirmado(s) - os times do rachao foram sorteados. Veja na aba Times.",
                 "/amistoso"), cancellationToken);
         }
 
@@ -137,18 +148,16 @@ public sealed class RachaoEventoService : IRachaoEventoService
     public Task<int> LimparAntigosAsync(int dias, CancellationToken cancellationToken)
         => _repo.RemoverAntigosAsync(DateTime.UtcNow.AddDays(-dias), cancellationToken);
 
-    // ---------- Helpers ----------
-
     private static RachaoEventoResponse MapEvento(RachaoEvento e)
         => new(
             e.Id, e.Token, e.HorarioEvento, e.NumeroTimes, e.SorteioFeito,
             e.Confirmacoes.OrderBy(c => c.DataCriacao)
-                .Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome)).ToList());
+                .Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa)).ToList());
 
     private async Task<RachaoPublicoResponse> MapPublicoAsync(RachaoEvento e, CancellationToken cancellationToken)
     {
         var times = new List<TimeSorteadoResponse>();
-        if (e.SorteioFeito)
+        if (e.SorteioFeito && e.Confirmacoes.Count > 0)
         {
             var sorteados = await _amistosoRepo.GetTimesAsync(e.EmpresaId, cancellationToken);
             times = sorteados
@@ -159,11 +168,32 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
         return new RachaoPublicoResponse(
             e.Token,
-            e.Empresa?.Nome ?? "Rachão",
+            e.Empresa?.Nome ?? "Rachao",
             e.HorarioEvento,
             e.NumeroTimes,
             e.SorteioFeito,
-            e.Confirmacoes.OrderBy(c => c.DataCriacao).Select(c => c.Nome).ToList(),
+            e.Confirmacoes.OrderBy(c => c.DataCriacao).Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa)).ToList(),
             times);
+    }
+
+    private static string NomeComEmpresa(RachaoConfirmacao confirmacao)
+        => string.IsNullOrWhiteSpace(confirmacao.Empresa)
+            ? confirmacao.Nome
+            : $"{confirmacao.Nome} - {confirmacao.Empresa}";
+
+    private static string CriarChaveUnica(string nome, string empresa)
+        => $"{NormalizarParte(nome)}|{NormalizarParte(empresa)}";
+
+    private static string NormalizarParte(string valor)
+    {
+        var semAcentos = new StringBuilder();
+        foreach (var c in valor.Trim().Normalize(NormalizationForm.FormD))
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                semAcentos.Append(c);
+        }
+
+        var partes = semAcentos.ToString().Normalize(NormalizationForm.FormC).ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(' ', partes);
     }
 }

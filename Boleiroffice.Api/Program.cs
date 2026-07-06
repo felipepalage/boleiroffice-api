@@ -36,6 +36,10 @@ builder.Services.AddSignalR();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
+builder.Services.AddHttpClient<ICnpjLookupService, Boleiroffice.Infrastructure.Services.CnpjLookupService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(8);
+});
 builder.Services.AddHostedService<BackgroundFinalizationService>();
 builder.Services.AddHostedService<Boleiroffice.Api.Services.RachaoScheduler>();
 

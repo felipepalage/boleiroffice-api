@@ -11,10 +11,19 @@ namespace Boleiroffice.Api.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ICnpjLookupService _cnpjLookupService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ICnpjLookupService cnpjLookupService)
     {
         _authService = authService;
+        _cnpjLookupService = cnpjLookupService;
+    }
+
+    [HttpGet("cnpj/{cnpj}")]
+    public async Task<ActionResult<CnpjInfoResponse>> ConsultarCnpj(string cnpj, CancellationToken cancellationToken)
+    {
+        var info = await _cnpjLookupService.ConsultarAsync(cnpj, cancellationToken);
+        return info is null ? NotFound() : Ok(info);
     }
 
     [HttpPost("register")]

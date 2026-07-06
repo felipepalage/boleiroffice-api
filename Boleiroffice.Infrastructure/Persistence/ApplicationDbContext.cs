@@ -1,4 +1,4 @@
-﻿using Boleiroffice.Domain.Entities;
+using Boleiroffice.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Boleiroffice.Infrastructure.Persistence;
@@ -409,8 +409,11 @@ public sealed class ApplicationDbContext : DbContext
             entity.ToTable("rachao_confirmacoes");
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Nome).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.Empresa).HasMaxLength(120);
+            entity.Property(x => x.ChaveUnica).HasMaxLength(260).IsRequired();
             entity.Property(x => x.DataCriacao).IsRequired();
             entity.HasIndex(x => x.RachaoEventoId).HasDatabaseName("IX_RachaoConfirmacao_EventoId");
+            entity.HasIndex(x => new { x.RachaoEventoId, x.ChaveUnica }).IsUnique().HasDatabaseName("IX_RachaoConfirmacao_Evento_ChaveUnica");
             entity.HasOne(x => x.Evento).WithMany(x => x.Confirmacoes).HasForeignKey(x => x.RachaoEventoId).OnDelete(DeleteBehavior.Cascade);
         });
     }
