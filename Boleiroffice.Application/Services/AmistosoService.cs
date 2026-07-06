@@ -229,16 +229,16 @@ public sealed class AmistosoService : IAmistosoService
 
     // ---------- Ranking / resumo ----------
 
-    public async Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetArtilheirosAsync(Guid empresaId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetArtilheirosAsync(Guid empresaId, string periodo, CancellationToken cancellationToken)
     {
         var gols = await _repository.GetGolsByEmpresaAsync(empresaId, cancellationToken);
-        return RankearArtilheiros(gols);
+        return RankearArtilheiros(FiltrarPorPeriodo(gols, periodo));
     }
 
-    public async Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetGarconsAsync(Guid empresaId, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetGarconsAsync(Guid empresaId, string periodo, CancellationToken cancellationToken)
     {
         var gols = await _repository.GetGolsByEmpresaAsync(empresaId, cancellationToken);
-        return RankearGarcons(gols);
+        return RankearGarcons(FiltrarPorPeriodo(gols, periodo));
     }
 
     public async Task<ResumoDiaResponse> GetResumoDiaAsync(Guid empresaId, DateOnly? data, CancellationToken cancellationToken)
@@ -259,6 +259,17 @@ public sealed class AmistosoService : IAmistosoService
     }
 
     // ---------- Helpers ----------
+
+    private static IEnumerable<GolAmistoso> FiltrarPorPeriodo(IEnumerable<GolAmistoso> gols, string? periodo)
+    {
+        var agora = DateTime.UtcNow;
+        return periodo switch
+        {
+            "dia" => gols.Where(g => g.DataCriacao.Date == agora.Date),
+            "mes" => gols.Where(g => g.DataCriacao.Year == agora.Year && g.DataCriacao.Month == agora.Month),
+            _ => gols,
+        };
+    }
 
     private static IReadOnlyList<ArtilheiroAmistosoResponse> RankearArtilheiros(IEnumerable<GolAmistoso> gols)
         => gols

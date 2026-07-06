@@ -86,12 +86,12 @@ public sealed class AmistosoController : ControllerBase
     // ---------- Ranking / resumo do dia ----------
 
     [HttpGet("ranking/artilheiros")]
-    public async Task<ActionResult<IReadOnlyList<ArtilheiroAmistosoResponse>>> GetArtilheiros(CancellationToken cancellationToken)
-        => Ok(await _service.GetArtilheirosAsync(User.GetCurrentUser().EmpresaId, cancellationToken));
+    public async Task<ActionResult<IReadOnlyList<ArtilheiroAmistosoResponse>>> GetArtilheiros([FromQuery] string periodo, CancellationToken cancellationToken)
+        => Ok(await _service.GetArtilheirosAsync(User.GetCurrentUser().EmpresaId, periodo ?? "geral", cancellationToken));
 
     [HttpGet("ranking/garcons")]
-    public async Task<ActionResult<IReadOnlyList<ArtilheiroAmistosoResponse>>> GetGarcons(CancellationToken cancellationToken)
-        => Ok(await _service.GetGarconsAsync(User.GetCurrentUser().EmpresaId, cancellationToken));
+    public async Task<ActionResult<IReadOnlyList<ArtilheiroAmistosoResponse>>> GetGarcons([FromQuery] string periodo, CancellationToken cancellationToken)
+        => Ok(await _service.GetGarconsAsync(User.GetCurrentUser().EmpresaId, periodo ?? "geral", cancellationToken));
 
     [HttpGet("resumo-dia")]
     public async Task<ActionResult<ResumoDiaResponse>> GetResumoDia([FromQuery] DateOnly? data, CancellationToken cancellationToken)

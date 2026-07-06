@@ -25,7 +25,7 @@ public interface IAmistosoService
     Task<PagedResult<PartidaAmistosoResponse>> GetPartidasAsync(Guid empresaId, PaginationParameters pagination, CancellationToken cancellationToken);
 
     // Ranking / resumo do dia
-    Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetArtilheirosAsync(Guid empresaId, CancellationToken cancellationToken);
-    Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetGarconsAsync(Guid empresaId, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetArtilheirosAsync(Guid empresaId, string periodo, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ArtilheiroAmistosoResponse>> GetGarconsAsync(Guid empresaId, string periodo, CancellationToken cancellationToken);
     Task<ResumoDiaResponse> GetResumoDiaAsync(Guid empresaId, DateOnly? data, CancellationToken cancellationToken);
 }
