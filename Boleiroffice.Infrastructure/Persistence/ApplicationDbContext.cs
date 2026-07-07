@@ -37,6 +37,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<GolAmistoso> GolsAmistoso => Set<GolAmistoso>();
     public DbSet<RachaoEvento> RachaoEventos => Set<RachaoEvento>();
     public DbSet<RachaoConfirmacao> RachaoConfirmacoes => Set<RachaoConfirmacao>();
+    public DbSet<ConviteMembro> ConvitesMembro => Set<ConviteMembro>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -415,6 +416,18 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasIndex(x => x.RachaoEventoId).HasDatabaseName("IX_RachaoConfirmacao_EventoId");
             entity.HasIndex(x => new { x.RachaoEventoId, x.ChaveUnica }).IsUnique().HasDatabaseName("IX_RachaoConfirmacao_Evento_ChaveUnica");
             entity.HasOne(x => x.Evento).WithMany(x => x.Confirmacoes).HasForeignKey(x => x.RachaoEventoId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ConviteMembro>(entity =>
+        {
+            entity.ToTable("convites_membro");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Token).HasMaxLength(40).IsRequired();
+            entity.Property(x => x.DataCriacao).IsRequired();
+            entity.Property(x => x.ExpiraEm).IsRequired();
+            entity.HasIndex(x => x.Token).IsUnique().HasDatabaseName("IX_ConviteMembro_Token");
+            entity.HasIndex(x => x.EmpresaId).HasDatabaseName("IX_ConviteMembro_EmpresaId");
+            entity.HasOne(x => x.Empresa).WithMany().HasForeignKey(x => x.EmpresaId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

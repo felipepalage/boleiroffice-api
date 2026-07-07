@@ -57,6 +57,7 @@ public static class DependencyInjection
         services.AddScoped<IAmistosoRepository, AmistosoRepository>();
         services.AddScoped<IRachaoEventoRepository, RachaoEventoRepository>();
         services.AddScoped<IEstatisticasPublicasRepository, EstatisticasPublicasRepository>();
+        services.AddScoped<IConviteMembroRepository, ConviteMembroRepository>();
 
         return services;
     }
