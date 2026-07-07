@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<ITorneioService, TorneioService>();
         services.AddScoped<IAmistosoService, AmistosoService>();
         services.AddScoped<IRachaoEventoService, RachaoEventoService>();
+        services.AddScoped<IEstatisticasPublicasService, EstatisticasPublicasService>();
 
         return services;
     }

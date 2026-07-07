@@ -10,10 +10,19 @@ namespace Boleiroffice.Api.Controllers;
 public sealed class RankingController : ControllerBase
 {
     private readonly IRankingService _rankingService;
+    private readonly IEstatisticasPublicasService _estatisticasService;
 
-    public RankingController(IRankingService rankingService)
+    public RankingController(IRankingService rankingService, IEstatisticasPublicasService estatisticasService)
     {
         _rankingService = rankingService;
+        _estatisticasService = estatisticasService;
+    }
+
+    [HttpGet("estatisticas")]
+    public async Task<ActionResult<EstatisticasPublicasResponse>> GetEstatisticas(CancellationToken cancellationToken)
+    {
+        var response = await _estatisticasService.GetAsync(cancellationToken);
+        return Ok(response);
     }
 
     private static DateOnly? PeriodToDataInicio(string? periodo) => periodo?.ToLowerInvariant() switch
