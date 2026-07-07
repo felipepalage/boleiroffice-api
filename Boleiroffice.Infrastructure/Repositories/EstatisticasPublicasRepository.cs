@@ -20,19 +20,13 @@ public sealed class EstatisticasPublicasRepository : IEstatisticasPublicasReposi
         var empresas = await _context.Empresas.CountAsync(cancellationToken);
         var times = await _context.Times.CountAsync(cancellationToken);
 
-        var jogosDesafio = await _context.Desafios
+        // Só conta desafios oficiais entre empresas — amistoso/rachão (jogo interno) não entra.
+        var jogos = await _context.Desafios
             .CountAsync(x => x.Status == DesafioStatus.Finalizado, cancellationToken);
-        var jogosAmistoso = await _context.PartidasAmistoso.CountAsync(cancellationToken);
-
-        var golsAmistoso = await _context.GolsAmistoso.CountAsync(cancellationToken);
-        var golsDesafio = await _context.Desafios
+        var gols = await _context.Desafios
             .Where(x => x.Status == DesafioStatus.Finalizado)
             .SumAsync(x => (x.PlacarCriador ?? 0) + (x.PlacarDesafiante ?? 0), cancellationToken);
 
-        return new EstatisticasPublicasResponse(
-            empresas,
-            times,
-            jogosDesafio + jogosAmistoso,
-            golsAmistoso + golsDesafio);
+        return new EstatisticasPublicasResponse(empresas, times, jogos, gols);
     }
 }
