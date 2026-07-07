@@ -55,31 +55,23 @@ public sealed class AuthService : IAuthService
             throw new BusinessException("Ja existe um usuario com esse email.");
         }
 
-        var empresa = await _empresaRepository.GetByCnpjAsync(normalizedCnpj, cancellationToken);
+        var empresaExistente = await _empresaRepository.GetByCnpjAsync(normalizedCnpj, cancellationToken);
+        if (empresaExistente is not null)
+        {
+            throw new BusinessException("Essa empresa já está cadastrada (CNPJ em uso). Faça login com a conta existente.");
+        }
 
-        if (empresa is null)
+        var empresa = new Empresa
         {
-            empresa = new Empresa
-            {
-                Nome = request.EmpresaNome.Trim(),
-                Cnpj = normalizedCnpj,
-                Bairro = request.EmpresaBairro.Trim(),
-                Cidade = request.EmpresaCidade.Trim(),
-                LogoUrl = NormalizeUrl(request.EmpresaLogoUrl),
-                DataCriacao = DateTime.UtcNow
-            };
+            Nome = request.EmpresaNome.Trim(),
+            Cnpj = normalizedCnpj,
+            Bairro = request.EmpresaBairro.Trim(),
+            Cidade = request.EmpresaCidade.Trim(),
+            LogoUrl = NormalizeUrl(request.EmpresaLogoUrl),
+            DataCriacao = DateTime.UtcNow
+        };
 
-            await _empresaRepository.AddAsync(empresa, cancellationToken);
-        }
-        else if (!string.Equals(empresa.Nome.Trim(), request.EmpresaNome.Trim(), StringComparison.OrdinalIgnoreCase))
-        {
-            throw new BusinessException("Ja existe uma empresa cadastrada com esse CNPJ.");
-        }
-        else if (string.IsNullOrWhiteSpace(empresa.LogoUrl) && !string.IsNullOrWhiteSpace(request.EmpresaLogoUrl))
-        {
-            empresa.LogoUrl = NormalizeUrl(request.EmpresaLogoUrl);
-            await _empresaRepository.UpdateAsync(empresa, cancellationToken);
-        }
+        await _empresaRepository.AddAsync(empresa, cancellationToken);
 
         var usuario = new Usuario
         {
