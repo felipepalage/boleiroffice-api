@@ -4,6 +4,7 @@ using Boleiroffice.Application.DTOs.Auth;
 using Boleiroffice.Application.Exceptions;
 using Boleiroffice.Application.Interfaces.Repositories;
 using Boleiroffice.Application.Interfaces.Security;
+using Boleiroffice.Application.Interfaces.Services;
 using Boleiroffice.Application.Mappings;
 using Boleiroffice.Application.Services;
 using Boleiroffice.Domain.Entities;
@@ -20,6 +21,7 @@ public sealed class AuthServiceTests
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly IMapper _mapper;
+    private readonly IEmailService _emailService;
     private readonly AuthService _sut;
 
     private const string ValidCnpj = "11222333000181";
@@ -31,11 +33,12 @@ public sealed class AuthServiceTests
         _empresaRepository = Substitute.For<IEmpresaRepository>();
         _passwordHasher = Substitute.For<IPasswordHasher>();
         _jwtTokenGenerator = Substitute.For<IJwtTokenGenerator>();
+        _emailService = Substitute.For<IEmailService>();
 
         var config = new MapperConfiguration(cfg => cfg.AddProfile<ApplicationMappingProfile>());
         _mapper = config.CreateMapper();
 
-        _sut = new AuthService(_usuarioRepository, _empresaRepository, _passwordHasher, _jwtTokenGenerator, _mapper);
+        _sut = new AuthService(_usuarioRepository, _empresaRepository, _passwordHasher, _jwtTokenGenerator, _mapper, _emailService);
     }
 
     private RegisterRequest BuildValidRegisterRequest(string? cnpj = null) => new()
@@ -74,19 +77,19 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task RegisterAsync_EmpresaJaExiste_UsaEmpresaExistente()
+    public async Task RegisterAsync_CnpjJaCadastrado_LancaBusinessException()
     {
-        SetupTokenGenerator();
         var empresaExistente = new Empresa { Id = Guid.NewGuid(), Nome = "Empresa XPTO", Cnpj = ValidCnpj };
 
         _usuarioRepository.ExistsByEmailAsync(Arg.Any<string>(), default).Returns(false);
         _empresaRepository.GetByCnpjAsync(Arg.Any<string>(), default).Returns(empresaExistente);
-        _passwordHasher.Hash(Arg.Any<string>()).Returns("hash123");
 
-        await _sut.RegisterAsync(BuildValidRegisterRequest(), default);
+        await _sut.Invoking(s => s.RegisterAsync(BuildValidRegisterRequest(), default))
+            .Should().ThrowAsync<BusinessException>()
+            .WithMessage("*cadastrada*");
 
         await _empresaRepository.DidNotReceive().AddAsync(Arg.Any<Empresa>(), default);
-        await _usuarioRepository.Received(1).AddAsync(Arg.Any<Usuario>(), default);
+        await _usuarioRepository.DidNotReceive().AddAsync(Arg.Any<Usuario>(), default);
     }
 
     [Fact]

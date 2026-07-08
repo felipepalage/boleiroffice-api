@@ -17,19 +17,22 @@ public sealed class AuthService : IAuthService
     private readonly IMapper _mapper;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         IUsuarioRepository usuarioRepository,
         IEmpresaRepository empresaRepository,
         IPasswordHasher passwordHasher,
         IJwtTokenGenerator jwtTokenGenerator,
-        IMapper mapper)
+        IMapper mapper,
+        IEmailService emailService)
     {
         _usuarioRepository = usuarioRepository;
         _empresaRepository = empresaRepository;
         _passwordHasher = passwordHasher;
         _jwtTokenGenerator = jwtTokenGenerator;
         _mapper = mapper;
+        _emailService = emailService;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken)
@@ -68,7 +71,8 @@ public sealed class AuthService : IAuthService
             Bairro = request.EmpresaBairro.Trim(),
             Cidade = request.EmpresaCidade.Trim(),
             LogoUrl = NormalizeUrl(request.EmpresaLogoUrl),
-            DataCriacao = DateTime.UtcNow
+            DataCriacao = DateTime.UtcNow,
+            IndicadaPorEmpresaId = request.IndicadoPorEmpresaId
         };
 
         await _empresaRepository.AddAsync(empresa, cancellationToken);
@@ -85,6 +89,13 @@ public sealed class AuthService : IAuthService
         await _usuarioRepository.AddAsync(usuario, cancellationToken);
 
         var token = _jwtTokenGenerator.GenerateToken(usuario, empresa.Nome);
+
+        await _emailService.SendAsync(
+            usuario.Email,
+            "Bem-vindo ao Boleiroffice ⚽",
+            $"<p>Olá {usuario.Nome},</p><p>Sua empresa <strong>{empresa.Nome}</strong> entrou no Boleiroffice. Crie seu time e comece a marcar amistosos com outras empresas!</p><p><a href=\"https://boleiroffice.com.br/app\">Acessar plataforma</a></p>",
+            cancellationToken);
+
         return new AuthResponse
         {
             Token = token.Token,

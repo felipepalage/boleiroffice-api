@@ -28,4 +28,7 @@ public sealed class EstatisticasPublicasService : IEstatisticasPublicasService
         await _cacheService.SetAsync(CacheKey, stats, TimeSpan.FromMinutes(2), cancellationToken);
         return stats;
     }
+
+    public Task<IReadOnlyList<IndicadorResponse>> GetTopIndicadoresAsync(CancellationToken cancellationToken)
+        => _repository.GetTopIndicadoresAsync(20, cancellationToken);
 }

@@ -25,6 +25,13 @@ public sealed class RankingController : ControllerBase
         return Ok(response);
     }
 
+    [HttpGet("indicacoes")]
+    public async Task<ActionResult<IReadOnlyList<IndicadorResponse>>> GetIndicacoes(CancellationToken cancellationToken)
+    {
+        var response = await _estatisticasService.GetTopIndicadoresAsync(cancellationToken);
+        return Ok(response);
+    }
+
     private static DateOnly? PeriodToDataInicio(string? periodo) => periodo?.ToLowerInvariant() switch
     {
         "semanal" => DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-7)),

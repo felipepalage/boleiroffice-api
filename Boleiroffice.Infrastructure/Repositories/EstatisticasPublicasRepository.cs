@@ -29,4 +29,27 @@ public sealed class EstatisticasPublicasRepository : IEstatisticasPublicasReposi
 
         return new EstatisticasPublicasResponse(empresas, times, jogos, gols);
     }
+
+    public async Task<IReadOnlyList<IndicadorResponse>> GetTopIndicadoresAsync(int limite, CancellationToken cancellationToken)
+    {
+        var counts = await _context.Empresas
+            .Where(x => x.IndicadaPorEmpresaId != null)
+            .GroupBy(x => x.IndicadaPorEmpresaId!.Value)
+            .Select(g => new { EmpresaId = g.Key, Total = g.Count() })
+            .OrderByDescending(x => x.Total)
+            .Take(limite)
+            .ToListAsync(cancellationToken);
+
+        if (counts.Count == 0)
+            return Array.Empty<IndicadorResponse>();
+
+        var ids = counts.Select(c => c.EmpresaId).ToList();
+        var nomes = await _context.Empresas
+            .Where(e => ids.Contains(e.Id))
+            .ToDictionaryAsync(e => e.Id, e => e.Nome, cancellationToken);
+
+        return counts
+            .Select(c => new IndicadorResponse(c.EmpresaId, nomes.TryGetValue(c.EmpresaId, out var n) ? n : "Empresa", c.Total))
+            .ToList();
+    }
 }

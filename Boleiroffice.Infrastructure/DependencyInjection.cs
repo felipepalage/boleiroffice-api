@@ -58,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IRachaoEventoRepository, RachaoEventoRepository>();
         services.AddScoped<IEstatisticasPublicasRepository, EstatisticasPublicasRepository>();
         services.AddScoped<IConviteMembroRepository, ConviteMembroRepository>();
+        services.AddScoped<IEmailService, SmtpEmailService>();
 
         return services;
     }

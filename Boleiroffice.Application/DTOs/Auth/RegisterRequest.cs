@@ -10,4 +10,5 @@ public sealed class RegisterRequest
     public string EmpresaBairro { get; init; } = string.Empty;
     public string EmpresaCidade { get; init; } = string.Empty;
     public string? EmpresaLogoUrl { get; init; }
+    public Guid? IndicadoPorEmpresaId { get; init; }
 }

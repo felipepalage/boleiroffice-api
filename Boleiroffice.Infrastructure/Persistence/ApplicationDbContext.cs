@@ -55,6 +55,7 @@ public sealed class ApplicationDbContext : DbContext
             entity.Property(x => x.DataCriacao).IsRequired();
             entity.HasIndex(x => x.Nome).IsUnique();
             entity.HasIndex(x => x.Cnpj).IsUnique();
+            entity.HasIndex(x => x.IndicadaPorEmpresaId).HasDatabaseName("IX_Empresa_IndicadaPor");
         });
 
         modelBuilder.Entity<Time>(entity =>
