@@ -1,6 +1,6 @@
 namespace Boleiroffice.Application.DTOs.Rachao;
 
-public sealed record CriarRachaoRequest(DateTime HorarioEvento, int NumeroTimes);
+public sealed record CriarRachaoRequest(DateTime HorarioEvento, int JogadoresPorTime, int NumeroTimes);
 
 public sealed record ConfirmarPresencaRequest(string Nome, string Empresa);
 

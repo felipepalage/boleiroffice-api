@@ -10,9 +10,6 @@ namespace Boleiroffice.Application.Services;
 
 public sealed class RachaoEventoService : IRachaoEventoService
 {
-    // Fut7: cada time sorteado tem exatamente esse número de jogadores.
-    private const int JogadoresPorTime = 6;
-
     private readonly IRachaoEventoRepository _repo;
     private readonly IAmistosoRepository _amistosoRepo;
     private readonly INotificationService _notifier;
@@ -26,13 +23,15 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
     public async Task<RachaoEventoResponse> CriarAsync(Guid empresaId, CriarRachaoRequest request, CancellationToken cancellationToken)
     {
-        // Nº de times é automático (confirmados ÷ 6). Guardamos 0 = automático.
+        // JogadoresPorTime = quantos jogadores formam um time (ex: 7 = fut7, 5 = fut5).
+        // NumeroTimes = 0 (automático: confirmados ÷ JogadoresPorTime).
         var evento = new RachaoEvento
         {
             Id = Guid.NewGuid(),
             EmpresaId = empresaId,
             Token = Guid.NewGuid().ToString("N")[..10],
             HorarioEvento = DateTime.SpecifyKind(request.HorarioEvento, DateTimeKind.Utc),
+            JogadoresPorTime = request.JogadoresPorTime,
             NumeroTimes = 0,
             SorteioFeito = false,
             DataCriacao = DateTime.UtcNow
@@ -95,14 +94,15 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
         foreach (var evento in pendentes)
         {
+            var porTime = evento.JogadoresPorTime;
             var confirmados = evento.Confirmacoes.Select(NomeComEmpresa).ToList();
-            // Nº de times = quantos grupos completos de 6 dá pra formar. Sobra fica de fora.
-            var numTimes = confirmados.Count / JogadoresPorTime;
-            var deFora = confirmados.Count - (numTimes * JogadoresPorTime);
+            // Nº de times = quantos grupos completos dá pra formar. Sobra fica de fora.
+            var numTimes = confirmados.Count / porTime;
+            var deFora = confirmados.Count - (numTimes * porTime);
 
             if (numTimes >= 1)
             {
-                var capacidade = numTimes * JogadoresPorTime;
+                var capacidade = numTimes * porTime;
 
                 // Formação do último sorteio (para nunca repetir a mesma na sequência).
                 var anteriores = await _amistosoRepo.GetTimesAsync(evento.EmpresaId, cancellationToken);
@@ -113,7 +113,7 @@ public sealed class RachaoEventoService : IRachaoEventoService
                 {
                     var embaralhado = confirmados.OrderBy(_ => Guid.NewGuid()).Take(capacidade).ToList();
                     grupos = Enumerable.Range(0, numTimes)
-                        .Select(i => embaralhado.Skip(i * JogadoresPorTime).Take(JogadoresPorTime).ToList())
+                        .Select(i => embaralhado.Skip(i * porTime).Take(porTime).ToList())
                         .ToList();
                     if (ChaveFormacao(grupos) != chaveAnterior) break; // diferente da semana anterior
                 }
@@ -151,9 +151,9 @@ public sealed class RachaoEventoService : IRachaoEventoService
             total++;
 
             var mensagem = numTimes >= 1
-                ? $"{confirmados.Count} confirmados: {numTimes} time(s) de {JogadoresPorTime}"
+                ? $"{confirmados.Count} confirmados: {numTimes} time(s) de {porTime}"
                   + (deFora > 0 ? $" - {deFora} ficaram de fora pro proximo rachao." : ".")
-                : $"So {confirmados.Count} confirmado(s) - faltou gente pra formar um time de {JogadoresPorTime}.";
+                : $"So {confirmados.Count} confirmado(s) - faltou gente pra formar um time de {porTime}.";
 
             await _notifier.SendToEmpresaAsync(evento.EmpresaId, new AppNotification(
                 "rachao",
@@ -177,7 +177,7 @@ public sealed class RachaoEventoService : IRachaoEventoService
     private async Task<RachaoPublicoResponse> MapPublicoAsync(RachaoEvento e, CancellationToken cancellationToken)
     {
         var times = new List<TimeSorteadoResponse>();
-        if (e.SorteioFeito && e.Confirmacoes.Count >= JogadoresPorTime)
+        if (e.SorteioFeito && e.Confirmacoes.Count >= e.JogadoresPorTime)
         {
             var sorteados = await _amistosoRepo.GetTimesAsync(e.EmpresaId, cancellationToken);
             times = sorteados

@@ -11,6 +11,7 @@ public class RachaoEvento : BaseEntity
     public Guid EmpresaId { get; set; }
     public string Token { get; set; } = string.Empty;
     public DateTime HorarioEvento { get; set; } // UTC — quando o rachão acontece
+    public int JogadoresPorTime { get; set; } = 6; // fut7 default
     public int NumeroTimes { get; set; } = 2;
     public bool SorteioFeito { get; set; }
     public DateTime DataCriacao { get; set; } = DateTime.UtcNow;

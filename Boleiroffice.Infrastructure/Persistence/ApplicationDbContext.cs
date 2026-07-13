@@ -399,6 +399,7 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Token).HasMaxLength(40).IsRequired();
             entity.Property(x => x.HorarioEvento).IsRequired();
+            entity.Property(x => x.JogadoresPorTime).IsRequired();
             entity.Property(x => x.NumeroTimes).IsRequired();
             entity.Property(x => x.DataCriacao).IsRequired();
             entity.HasIndex(x => x.Token).IsUnique().HasDatabaseName("IX_RachaoEvento_Token");
