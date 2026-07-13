@@ -6,6 +6,7 @@ public interface IRachaoEventoRepository
 {
     Task AddAsync(RachaoEvento evento, CancellationToken cancellationToken);
     Task AddConfirmacaoAsync(RachaoConfirmacao confirmacao, CancellationToken cancellationToken);
+    Task RemoveConfirmacaoAsync(RachaoConfirmacao confirmacao, CancellationToken cancellationToken);
     Task<RachaoEvento?> GetByTokenAsync(string token, CancellationToken cancellationToken);
     Task<RachaoEvento?> GetAtivoByEmpresaAsync(Guid empresaId, CancellationToken cancellationToken);
     Task<IReadOnlyList<RachaoEvento>> GetPendentesSorteioAsync(DateTime agora, CancellationToken cancellationToken);

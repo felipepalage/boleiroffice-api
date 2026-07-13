@@ -46,4 +46,12 @@ public sealed class RachaoController : ControllerBase
         var evento = await _service.ConfirmarAsync(token, request, cancellationToken);
         return evento is null ? NotFound() : Ok(evento);
     }
+
+    [AllowAnonymous]
+    [HttpPost("publico/{token}/desistir")]
+    public async Task<ActionResult<RachaoPublicoResponse>> Desistir(string token, [FromBody] DesistirPresencaRequest request, CancellationToken cancellationToken)
+    {
+        var evento = await _service.DesistirAsync(token, request, cancellationToken);
+        return evento is null ? NotFound() : Ok(evento);
+    }
 }

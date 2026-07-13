@@ -23,8 +23,6 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
     public async Task<RachaoEventoResponse> CriarAsync(Guid empresaId, CriarRachaoRequest request, CancellationToken cancellationToken)
     {
-        // JogadoresPorTime = quantos jogadores formam um time (ex: 7 = fut7, 5 = fut5).
-        // NumeroTimes = 0 (automático: confirmados ÷ JogadoresPorTime).
         var evento = new RachaoEvento
         {
             Id = Guid.NewGuid(),
@@ -87,6 +85,24 @@ public sealed class RachaoEventoService : IRachaoEventoService
         return await MapPublicoAsync(evento, cancellationToken);
     }
 
+    public async Task<RachaoPublicoResponse?> DesistirAsync(string token, DesistirPresencaRequest request, CancellationToken cancellationToken)
+    {
+        var evento = await _repo.GetByTokenAsync(token, cancellationToken);
+        if (evento is null) return null;
+        if (evento.SorteioFeito)
+            throw new BusinessException("Os times ja foram sorteados, nao e possivel desistir.");
+
+        var chaveUnica = CriarChaveUnica((request.Nome ?? string.Empty).Trim(), (request.Empresa ?? string.Empty).Trim());
+        var confirmacao = evento.Confirmacoes.FirstOrDefault(c => CriarChaveUnica(c.Nome, c.Empresa ?? string.Empty) == chaveUnica);
+        if (confirmacao is null)
+            throw new BusinessException("Voce nao esta confirmado nesse rachao.");
+
+        evento.Confirmacoes.Remove(confirmacao);
+        await _repo.RemoveConfirmacaoAsync(confirmacao, cancellationToken);
+
+        return await MapPublicoAsync(evento, cancellationToken);
+    }
+
     public async Task<int> SortearPendentesAsync(CancellationToken cancellationToken)
     {
         var pendentes = await _repo.GetPendentesSorteioAsync(DateTime.UtcNow, cancellationToken);
@@ -96,7 +112,6 @@ public sealed class RachaoEventoService : IRachaoEventoService
         {
             var porTime = evento.JogadoresPorTime;
             var confirmados = evento.Confirmacoes.Select(NomeComEmpresa).ToList();
-            // Nº de times = quantos grupos completos dá pra formar. Sobra fica de fora.
             var numTimes = confirmados.Count / porTime;
             var deFora = confirmados.Count - (numTimes * porTime);
 
@@ -104,7 +119,6 @@ public sealed class RachaoEventoService : IRachaoEventoService
             {
                 var capacidade = numTimes * porTime;
 
-                // Formação do último sorteio (para nunca repetir a mesma na sequência).
                 var anteriores = await _amistosoRepo.GetTimesAsync(evento.EmpresaId, cancellationToken);
                 var chaveAnterior = ChaveFormacao(anteriores.Select(t => t.Jogadores.Select(j => j.Nome)));
 
@@ -115,7 +129,7 @@ public sealed class RachaoEventoService : IRachaoEventoService
                     grupos = Enumerable.Range(0, numTimes)
                         .Select(i => embaralhado.Skip(i * porTime).Take(porTime).ToList())
                         .ToList();
-                    if (ChaveFormacao(grupos) != chaveAnterior) break; // diferente da semana anterior
+                    if (ChaveFormacao(grupos) != chaveAnterior) break;
                 }
 
                 var dataSorteio = DateTime.UtcNow;
@@ -150,6 +164,7 @@ public sealed class RachaoEventoService : IRachaoEventoService
             await _repo.SaveAsync(cancellationToken);
             total++;
 
+            var excedentes = deFora > 0 ? confirmados.Skip(numTimes * porTime).ToList() : new List<string>();
             var mensagem = numTimes >= 1
                 ? $"{confirmados.Count} confirmados: {numTimes} time(s) de {porTime}"
                   + (deFora > 0 ? $" - {deFora} ficaram de fora pro proximo rachao." : ".")
@@ -177,6 +192,8 @@ public sealed class RachaoEventoService : IRachaoEventoService
     private async Task<RachaoPublicoResponse> MapPublicoAsync(RachaoEvento e, CancellationToken cancellationToken)
     {
         var times = new List<TimeSorteadoResponse>();
+        var excedentes = new List<string>();
+
         if (e.SorteioFeito && e.Confirmacoes.Count >= e.JogadoresPorTime)
         {
             var sorteados = await _amistosoRepo.GetTimesAsync(e.EmpresaId, cancellationToken);
@@ -184,19 +201,28 @@ public sealed class RachaoEventoService : IRachaoEventoService
                 .OrderBy(t => t.Ordem)
                 .Select(t => new TimeSorteadoResponse(t.Nome, t.Jogadores.Select(j => j.Nome).OrderBy(n => n).ToList()))
                 .ToList();
+
+            // Excedentes = confirmados que nao estao em nenhum time sorteado
+            var nomesSorteados = sorteados.SelectMany(t => t.Jogadores).Select(j => j.Nome).ToHashSet();
+            excedentes = e.Confirmacoes
+                .Select(NomeComEmpresa)
+                .Where(n => !nomesSorteados.Contains(n))
+                .OrderBy(n => n)
+                .ToList();
         }
 
         return new RachaoPublicoResponse(
             e.Token,
             e.Empresa?.Nome ?? "Rachao",
             e.HorarioEvento,
+            e.JogadoresPorTime,
             e.NumeroTimes,
             e.SorteioFeito,
             e.Confirmacoes.OrderBy(c => c.DataCriacao).Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa)).ToList(),
-            times);
+            times,
+            excedentes);
     }
 
-    // Assinatura da formação (conjunto de times, cada um conjunto de nomes) — ignora ordem.
     private static string ChaveFormacao(IEnumerable<IEnumerable<string>> times)
     {
         var normalizados = times

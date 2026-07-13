@@ -23,6 +23,12 @@ public sealed class RachaoEventoRepository : IRachaoEventoRepository
         await _context.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RemoveConfirmacaoAsync(RachaoConfirmacao confirmacao, CancellationToken cancellationToken)
+    {
+        _context.RachaoConfirmacoes.Remove(confirmacao);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
     public Task<RachaoEvento?> GetByTokenAsync(string token, CancellationToken cancellationToken)
         => _context.RachaoEventos
             .Include(x => x.Confirmacoes)
