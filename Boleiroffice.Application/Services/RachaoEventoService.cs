@@ -74,6 +74,10 @@ public sealed class RachaoEventoService : IRachaoEventoService
         if (jaConfirmado)
             throw new BusinessException("Voce ja confirmou presenca nesse rachao.");
 
+        var cpfJaUsado = evento.Confirmacoes.Any(c => !string.IsNullOrEmpty(c.Cpf) && c.Cpf == cpf);
+        if (cpfJaUsado)
+            throw new BusinessException("Esse CPF ja confirmou presenca nesse rachao.");
+
         var confirmacao = new RachaoConfirmacao
         {
             Id = Guid.NewGuid(),

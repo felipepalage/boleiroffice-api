@@ -67,6 +67,21 @@ public sealed class RachaoEventoServiceTests
     }
 
     [Fact]
+    public async Task ConfirmarAsync_ComCpfJaConfirmadoPorOutroNome_LancaBusinessException()
+    {
+        var evento = MakeEvento();
+        evento.Confirmacoes.Add(MakeConfirmacao(evento, "Joao Silva"));
+        _repo.GetByTokenAsync(evento.Token, default).Returns(evento);
+
+        var request = new ConfirmarPresencaRequest("Joao S.", "Zitec", ValidCpf, false);
+
+        var act = () => _sut.ConfirmarAsync(evento.Token, request, default);
+
+        await act.Should().ThrowAsync<BusinessException>();
+        await _repo.DidNotReceive().AddConfirmacaoAsync(Arg.Any<RachaoConfirmacao>(), default);
+    }
+
+    [Fact]
     public async Task ConfirmarAsync_ComCpfValido_SalvaConfirmacaoComGoleiro()
     {
         var evento = MakeEvento();

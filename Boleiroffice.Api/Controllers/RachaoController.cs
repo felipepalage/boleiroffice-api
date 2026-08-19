@@ -3,11 +3,13 @@ using Boleiroffice.Application.DTOs.Rachao;
 using Boleiroffice.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Boleiroffice.Api.Controllers;
 
 [ApiController]
 [Route("api/rachao")]
+[EnableRateLimiting("auth")]
 public sealed class RachaoController : ControllerBase
 {
     private readonly IRachaoEventoService _service;

@@ -1,16 +1,19 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Boleiroffice.Api.Hubs;
 
+[Authorize]
 public sealed class NotificationHub : Hub
 {
-    public async Task JoinGroup(string empresaId)
+    public override async Task OnConnectedAsync()
     {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"empresa-{empresaId}");
-    }
+        var empresaId = Context.User?.FindFirst("empresa_id")?.Value;
+        if (!string.IsNullOrEmpty(empresaId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"empresa-{empresaId}");
+        }
 
-    public async Task LeaveGroup(string empresaId)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"empresa-{empresaId}");
+        await base.OnConnectedAsync();
     }
 }

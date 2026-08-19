@@ -17,6 +17,7 @@ public sealed class PresencaController : ControllerBase
         _presencaService = presencaService;
     }
 
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<PresencaDesafioResponse>> Get(Guid desafioId, CancellationToken cancellationToken)
     {
