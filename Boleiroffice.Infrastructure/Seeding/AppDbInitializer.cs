@@ -9,9 +9,8 @@ public static class AppDbInitializer
 {
     private const string ZitecCnpj = "54638076000176";
     private const string ZitecLogin = "admin@zitec.com.br";
-    private const string ZitecPassword = "Zitec@2026!";
 
-    public static async Task InitializeAsync(IServiceProvider serviceProvider, bool seedData, CancellationToken cancellationToken = default)
+    public static async Task InitializeAsync(IServiceProvider serviceProvider, bool seedData, string? senhaInicial, CancellationToken cancellationToken = default)
     {
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -23,10 +22,15 @@ public static class AppDbInitializer
             return;
         }
 
-        await EnsureZitecAsync(context, cancellationToken);
+        if (string.IsNullOrWhiteSpace(senhaInicial))
+        {
+            throw new InvalidOperationException("Seed:ZitecPassword nao configurado - necessario para semear o usuario inicial.");
+        }
+
+        await EnsureZitecAsync(context, senhaInicial, cancellationToken);
     }
 
-    private static async Task EnsureZitecAsync(ApplicationDbContext context, CancellationToken cancellationToken)
+    private static async Task EnsureZitecAsync(ApplicationDbContext context, string senhaInicial, CancellationToken cancellationToken)
     {
         var empresa = await context.Empresas.FirstOrDefaultAsync(x => x.Cnpj == ZitecCnpj, cancellationToken);
         if (empresa is null)
@@ -67,7 +71,7 @@ public static class AppDbInitializer
             {
                 Nome = "Admin Zitec",
                 Email = ZitecLogin,
-                SenhaHash = BCrypt.Net.BCrypt.HashPassword(ZitecPassword),
+                SenhaHash = BCrypt.Net.BCrypt.HashPassword(senhaInicial),
                 EmpresaId = empresa.Id
             };
 

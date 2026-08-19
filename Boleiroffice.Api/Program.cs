@@ -183,7 +183,8 @@ var seedDataOnStartup = app.Configuration.GetValue<bool>("Database:SeedDataOnSta
 
 if (applyMigrationsOnStartup)
 {
-    await AppDbInitializer.InitializeAsync(app.Services, seedDataOnStartup);
+    var senhaInicialSeed = app.Configuration["Seed:ZitecPassword"];
+    await AppDbInitializer.InitializeAsync(app.Services, seedDataOnStartup, senhaInicialSeed);
 }
 
 app.Run();
