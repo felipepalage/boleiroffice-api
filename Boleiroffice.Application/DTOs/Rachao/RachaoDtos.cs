@@ -2,11 +2,11 @@ namespace Boleiroffice.Application.DTOs.Rachao;
 
 public sealed record CriarRachaoRequest(DateTime HorarioEvento, int JogadoresPorTime, int NumeroTimes);
 
-public sealed record ConfirmarPresencaRequest(string Nome, string Empresa);
+public sealed record ConfirmarPresencaRequest(string Nome, string Empresa, string Cpf, bool Goleiro);
 
 public sealed record DesistirPresencaRequest(string Nome, string Empresa);
 
-public sealed record RachaoConfirmacaoResponse(Guid Id, string Nome, string? Empresa);
+public sealed record RachaoConfirmacaoResponse(Guid Id, string Nome, string? Empresa, bool Goleiro);
 
 // Visao do dono (autenticado) - gerencia o evento
 public sealed record RachaoEventoResponse(

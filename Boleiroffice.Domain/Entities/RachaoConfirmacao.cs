@@ -10,6 +10,8 @@ public class RachaoConfirmacao : BaseEntity
     public Guid RachaoEventoId { get; set; }
     public string Nome { get; set; } = string.Empty;
     public string? Empresa { get; set; }
+    public string Cpf { get; set; } = string.Empty;
+    public bool Goleiro { get; set; }
     public string ChaveUnica { get; set; } = string.Empty;
     public DateTime DataCriacao { get; set; } = DateTime.UtcNow;
 

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Boleiroffice.Application.Common.Validation;
 using Boleiroffice.Application.DTOs.Rachao;
 using Boleiroffice.Application.Exceptions;
 using Boleiroffice.Application.Interfaces.Repositories;
@@ -60,10 +61,13 @@ public sealed class RachaoEventoService : IRachaoEventoService
 
         var nome = (request.Nome ?? string.Empty).Trim();
         var empresa = (request.Empresa ?? string.Empty).Trim();
+        var cpf = CpfHelper.Normalize(request.Cpf);
         if (nome.Length < 2)
             throw new BusinessException("Informe seu nome para confirmar.");
         if (empresa.Length < 2)
             throw new BusinessException("Informe a empresa em que voce joga.");
+        if (!CpfHelper.IsValid(cpf))
+            throw new BusinessException("Informe um CPF valido.");
 
         var chaveUnica = CriarChaveUnica(nome, empresa);
         var jaConfirmado = evento.Confirmacoes.Any(c => CriarChaveUnica(c.Nome, c.Empresa ?? string.Empty) == chaveUnica);
@@ -76,6 +80,8 @@ public sealed class RachaoEventoService : IRachaoEventoService
             RachaoEventoId = evento.Id,
             Nome = nome,
             Empresa = empresa,
+            Cpf = cpf,
+            Goleiro = request.Goleiro,
             ChaveUnica = chaveUnica,
             DataCriacao = DateTime.UtcNow
         };
@@ -111,7 +117,7 @@ public sealed class RachaoEventoService : IRachaoEventoService
         foreach (var evento in pendentes)
         {
             var porTime = evento.JogadoresPorTime;
-            var confirmados = evento.Confirmacoes.Select(NomeComEmpresa).ToList();
+            var confirmados = evento.Confirmacoes.Where(c => !c.Goleiro).Select(NomeComEmpresa).ToList();
             var numTimes = confirmados.Count / porTime;
             var deFora = confirmados.Count - (numTimes * porTime);
 
@@ -187,14 +193,14 @@ public sealed class RachaoEventoService : IRachaoEventoService
         => new(
             e.Id, e.Token, e.HorarioEvento, e.NumeroTimes, e.SorteioFeito,
             e.Confirmacoes.OrderBy(c => c.DataCriacao)
-                .Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa)).ToList());
+                .Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa, c.Goleiro)).ToList());
 
     private async Task<RachaoPublicoResponse> MapPublicoAsync(RachaoEvento e, CancellationToken cancellationToken)
     {
         var times = new List<TimeSorteadoResponse>();
         var excedentes = new List<string>();
 
-        if (e.SorteioFeito && e.Confirmacoes.Count >= e.JogadoresPorTime)
+        if (e.SorteioFeito && e.Confirmacoes.Count(c => !c.Goleiro) >= e.JogadoresPorTime)
         {
             var sorteados = await _amistosoRepo.GetTimesAsync(e.EmpresaId, cancellationToken);
             times = sorteados
@@ -202,9 +208,10 @@ public sealed class RachaoEventoService : IRachaoEventoService
                 .Select(t => new TimeSorteadoResponse(t.Nome, t.Jogadores.Select(j => j.Nome).OrderBy(n => n).ToList()))
                 .ToList();
 
-            // Excedentes = confirmados que nao estao em nenhum time sorteado
+            // Excedentes = confirmados de linha que nao estao em nenhum time sorteado (goleiros nunca entram no sorteio)
             var nomesSorteados = sorteados.SelectMany(t => t.Jogadores).Select(j => j.Nome).ToHashSet();
             excedentes = e.Confirmacoes
+                .Where(c => !c.Goleiro)
                 .Select(NomeComEmpresa)
                 .Where(n => !nomesSorteados.Contains(n))
                 .OrderBy(n => n)
@@ -218,7 +225,7 @@ public sealed class RachaoEventoService : IRachaoEventoService
             e.JogadoresPorTime,
             e.NumeroTimes,
             e.SorteioFeito,
-            e.Confirmacoes.OrderBy(c => c.DataCriacao).Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa)).ToList(),
+            e.Confirmacoes.OrderBy(c => c.DataCriacao).Select(c => new RachaoConfirmacaoResponse(c.Id, c.Nome, c.Empresa, c.Goleiro)).ToList(),
             times,
             excedentes);
     }

@@ -413,6 +413,8 @@ public sealed class ApplicationDbContext : DbContext
             entity.HasKey(x => x.Id);
             entity.Property(x => x.Nome).HasMaxLength(120).IsRequired();
             entity.Property(x => x.Empresa).HasMaxLength(120);
+            entity.Property(x => x.Cpf).HasMaxLength(11).IsRequired();
+            entity.Property(x => x.Goleiro).IsRequired();
             entity.Property(x => x.ChaveUnica).HasMaxLength(260).IsRequired();
             entity.Property(x => x.DataCriacao).IsRequired();
             entity.HasIndex(x => x.RachaoEventoId).HasDatabaseName("IX_RachaoConfirmacao_EventoId");
